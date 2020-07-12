@@ -1,0 +1,7 @@
+cargo-registry
+target
+.idea
+.venv
+.cache
+.DS_Store
+coverage
