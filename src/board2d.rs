@@ -1,12 +1,20 @@
-pub struct GolBitmap {
+use rand::Rng;
+use std::fs;
+
+pub struct Point {
+    x: u32,
+    y: u32,
+}
+
+pub struct Board2D {
     data: Vec<Vec<bool>>,
     pub cols: usize,
     pub rows: usize,
 }
 
-impl GolBitmap {
-    pub fn new(cols: usize, rows: usize) -> GolBitmap {
-        GolBitmap {
+impl Board2D {
+    pub fn new(cols: usize, rows: usize) -> Board2D {
+        Board2D {
             cols,
             rows,
             data: vec!(vec!(false; rows); cols),
@@ -14,25 +22,36 @@ impl GolBitmap {
     }
 
     pub fn init_random(&mut self) {
+        let mut rng = rand::thread_rng();
         for col_index in 1..self.cols {
             for row_index in 1..self.rows {
-                if col_index % 3 == 0 || (row_index + 3) % 7 == 0 {
-                    self.reincarnate(col_index, row_index)
+                let n1: u8 = rng.gen();
+                if n1 % 2 == 0 {
+                    self.set_alive(col_index, row_index)
                 }
             }
         }
     }
 
-    pub fn init_from(&mut self, data: &str, aliveChar: Option<char>) {
+    pub fn init_from_plaintext_file(&mut self, path: &str) {
+        let gol_plaintext = fs::read_to_string(path).unwrap();
+        self.init_from_plaintext(&gol_plaintext, Some('o'))
+    }
+
+    pub fn init_from_plaintext(&mut self, data: &str, aliveChar: Option<char>) {
         let lines = data.split("\n");
         let mut row_i = 0;
         for line in lines {
+            if line.chars().nth(0).unwrap() == '!' {
+                continue
+            }
             let mut col_i = 0;
-            // todo: just remove the whitespace
-            for token in line.split(' ') {
-                let q = token.as_bytes();
-                if q[0] == aliveChar.unwrap_or('x') as u8 {
-                    self.reincarnate(col_i, row_i)
+            for token in line.chars() {
+                if token == ' ' {
+                    continue
+                }
+                if token == aliveChar.unwrap_or('o') {
+                    self.set_alive(col_i, row_i)
                 }
                 col_i += 1;
             }
@@ -40,19 +59,19 @@ impl GolBitmap {
         }
     }
 
-    pub fn kill_all(&mut self) {
+    pub fn set_dead_all(&mut self) {
         for col_index in 1..self.cols {
             for row_index in 1..self.rows {
-                self.kill(col_index, row_index)
+                self.set_dead(col_index, row_index)
             }
         }
     }
 
-    pub fn reincarnate(&mut self, col: usize, row: usize) {
+    pub fn set_alive(&mut self, col: usize, row: usize) {
         self.data[col][row] = true
     }
 
-    pub fn kill(&mut self, col: usize, row: usize) {
+    pub fn set_dead(&mut self, col: usize, row: usize) {
         self.data[col][row] = false
     }
 
@@ -147,16 +166,17 @@ mod tests {
     use std::slice::Split;
 
     use super::*;
+    use std::collections::HashMap;
 
     #[test]
     fn should_correct_construct_bitmap_from_string_1() {
-        let mut f = GolBitmap::new(5, 5);
+        let mut f = Board2D::new(5, 5);
         let fdata = "\
 - - - - -
 - - x x -
 - - - - -
 - - - - -";
-        f.init_from(fdata, Some('x'));
+        f.init_from_plaintext(fdata, Some('x'));
         assert!(f.is_alive(2, 1));
         assert!(f.is_alive(3, 1));
 
@@ -171,13 +191,13 @@ mod tests {
 
     #[test]
     fn should_correct_construct_bitmap_from_string_2() {
-        let mut f = GolBitmap::new(5, 5);
+        let mut f = Board2D::new(5, 5);
         let fdata = "\
 x - - - x
 x - x x -
 - x - x -
 - - - - x";
-        f.init_from(fdata, Some('x'));
+        f.init_from_plaintext(fdata, Some('x'));
         assert!(f.is_alive(0, 0));
         assert!(!f.is_alive(1, 0));
         assert!(!f.is_alive(2, 0));
@@ -205,13 +225,13 @@ x - x x -
 
     #[test]
     fn should_count_neighbours() {
-        let mut f = GolBitmap::new(5, 5);
+        let mut f = Board2D::new(5, 5);
         let fdata = "\
 - - - - -
 - - x - x
 - x - - x
 - - x - -";
-        f.init_from(fdata, Some('x'));
+        f.init_from_plaintext(fdata, Some('x'));
         assert_eq!(0, f.count_neighbours(0, 0));
         assert_eq!(2, f.count_neighbours(1, 1));
         assert_eq!(3, f.count_neighbours(2, 2));
@@ -225,41 +245,83 @@ x - x x -
 
     #[test]
     fn is_dead_should_be_opposite_of_is_alive() {
-        let mut f = GolBitmap::new(5, 5);
+        let mut f = Board2D::new(5, 5);
         let fdata = "\
 x - - - -
 - - - - -
 - - - - -
 - - - - -";
-        f.init_from(fdata, Some('x'));
-        f.kill(0,0);
+        f.init_from_plaintext(fdata, Some('x'));
+        f.set_dead(0,0);
         assert_ne!(f.is_dead(0, 0), f.is_alive(0, 0));
     }
 
     #[test]
     fn should_make_cell_alive() {
-        let mut f = GolBitmap::new(5, 5);
+        let mut f = Board2D::new(5, 5);
         let fdata = "\
 - - - - -
 - - - - -
 - - - - -
 - - - - -";
-        f.init_from(fdata, Some('x'));
-        f.reincarnate(0,0);
+        f.init_from_plaintext(fdata, Some('x'));
+        f.set_alive(0,0);
         assert!(f.is_alive(0, 0));
     }
 
     #[test]
     fn should_make_cell_dead() {
-        let mut f = GolBitmap::new(5, 5);
+        let mut f = Board2D::new(5, 5);
         let fdata = "\
 x - - - -
 - - - - -
 - - - - -
 - - - - -";
-        f.init_from(fdata, Some('x'));
-        f.kill(0,0);
+        f.init_from_plaintext(fdata, Some('x'));
+        f.set_dead(0,0);
         assert!(f.is_dead(0, 0));
     }
+
+
+    #[test]
+    fn should_read_plaintex() {
+        let mut f = Board2D::new(5, 5);
+        let fdata = "\
+!Name: Gosper glider gun
+!
+........................O...........
+......................O.O...........
+............OO......OO............OO
+...........O...O....OO............OO
+OO........O.....O...OO..............
+OO........O...O.OO....O.O...........
+..........O.....O.......O...........
+...........O...O....................
+............OO......................";
+        f.init_from_plaintext(fdata, Some('x'));
+        f.set_dead(0,0);
+        assert!(f.is_dead(0, 0));
+    }
+
+    #[test]
+    fn should_read_plaintext_file() {
+        let mut f = Board2D::new(5, 5);
+        f.init_from_plaintext_file("./patterns/plaintext/glider.txt");
+    }
+
+
+    #[test]
+    fn should_use_tuple_keyed_map() {
+        let mut hashmapMain: HashMap<(u32, u32), bool> = HashMap::new();
+        hashmapMain.insert((1, 2), false);
+        hashmapMain.insert((2, 1), true);
+        hashmapMain.insert((3, 1), true);
+        hashmapMain.insert((4, 1), true);
+        for ((x, y), val) in hashmapMain {
+            println!("({}, {}) = {}", x, y, val);
+        }
+    }
+
+
 }
 
