@@ -1,16 +1,81 @@
 use rand::Rng;
 use std::fs;
-
-pub struct Point {
-    x: u32,
-    y: u32,
-}
+use crate::common::Point;
+use crate::universe::universe::CellUniverse;
 
 pub struct Board2D {
     data: Vec<Vec<bool>>,
     pub cols: usize,
     pub rows: usize,
 }
+
+pub struct IteratorBoard2D<'a> {
+    board: &'a Board2D,
+    pos_row: usize,
+    pos_col: usize
+}
+
+impl<'a> Iterator for IteratorBoard2D<'a> {
+    type Item = Point;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // println!("next >> self.pos_row={} self.pos_col={}", self.pos_row, self.pos_col);
+        let mut ret: Option<Point> = None;
+        let mut terminate = false;
+        while self.pos_row < self.board.rows || self.pos_col < self.board.cols {
+            if ret.is_some() {
+                // println!("Breaking iteration at location x={} y={}", self.pos_col, self.pos_row);
+                terminate = true;
+                break
+            }
+            if self.board.is_alive(self.pos_col, self.pos_row) {
+                // println!("Found point x={} y={}", self.pos_col, self.pos_row);
+                ret = Some(Point{ x: self.pos_col, y: self.pos_row })
+                // not breaking yet, want to make sure we update iterator position
+                // to wherever we should *start* on calling next(&mut self) the next time.
+            }
+            if self.pos_col < self.board.cols {
+                self.pos_col += 1;
+            } else {
+                self.pos_col = 0;
+                self.pos_row += 1;
+            }
+        }
+        // println!("Iteratorin returning, stopped at self.pos_col={} self.pos_row={}", self.pos_col, self.pos_row);
+        return ret;
+    }
+}
+
+
+impl CellUniverse for Board2D {
+    fn set_cell_alive(&mut self, x: usize, y: usize) {
+        self.data[x][y] = true
+    }
+
+    fn set_cell_dead(&mut self, x: usize, y: usize) {
+        self.data[x][y] = false
+    }
+
+    fn set_cell_state(&mut self, x: usize, y: usize, alive: bool) {
+        self.data[x][y] = alive
+    }
+
+    fn iter_alive<'a>(&'a self) -> Box<dyn Iterator<Item=Point> + 'a> {
+        let iterator = IteratorBoard2D {
+            board: &self,
+            pos_row: 0,
+            pos_col: 0
+        };
+        Box::new(iterator)
+    }
+
+    fn insert<'a>(&'a mut self, x_origin: usize, y_origin: usize, cells: Box<dyn Iterator<Item=Point> + 'a>) {
+        for cell_point in cells {
+            self.set_cell_alive(x_origin + cell_point.x, y_origin + cell_point.y)
+        }
+    }
+}
+
 
 impl Board2D {
     pub fn new(cols: usize, rows: usize) -> Board2D {
@@ -27,7 +92,7 @@ impl Board2D {
             for row_index in 1..self.rows {
                 let n1: u8 = rng.gen();
                 if n1 % 2 == 0 {
-                    self.set_alive(col_index, row_index)
+                    self.set_cell_alive(col_index, row_index)
                 }
             }
         }
@@ -51,7 +116,7 @@ impl Board2D {
                     continue
                 }
                 if token == aliveChar.unwrap_or('o') {
-                    self.set_alive(col_i, row_i)
+                    self.set_cell_alive(col_i, row_i)
                 }
                 col_i += 1;
             }
@@ -59,24 +124,12 @@ impl Board2D {
         }
     }
 
-    pub fn set_dead_all(&mut self) {
+    pub fn make_cell_dead_all(&mut self) {
         for col_index in 1..self.cols {
             for row_index in 1..self.rows {
-                self.set_dead(col_index, row_index)
+                self.set_cell_dead(col_index, row_index)
             }
         }
-    }
-
-    pub fn set_alive(&mut self, col: usize, row: usize) {
-        self.data[col][row] = true
-    }
-
-    pub fn set_dead(&mut self, col: usize, row: usize) {
-        self.data[col][row] = false
-    }
-
-    pub fn set_state(&mut self, col: usize, row: usize, state: bool) {
-        self.data[col][row] = state
     }
 
     pub fn is_alive(&self, col: usize, row: usize) -> bool {
@@ -252,7 +305,7 @@ x - - - -
 - - - - -
 - - - - -";
         f.init_from_plaintext(fdata, Some('x'));
-        f.set_dead(0,0);
+        f.set_cell_dead(0, 0);
         assert_ne!(f.is_dead(0, 0), f.is_alive(0, 0));
     }
 
@@ -265,7 +318,7 @@ x - - - -
 - - - - -
 - - - - -";
         f.init_from_plaintext(fdata, Some('x'));
-        f.set_alive(0,0);
+        f.set_cell_alive(0, 0);
         assert!(f.is_alive(0, 0));
     }
 
@@ -278,7 +331,7 @@ x - - - -
 - - - - -
 - - - - -";
         f.init_from_plaintext(fdata, Some('x'));
-        f.set_dead(0,0);
+        f.set_cell_dead(0, 0);
         assert!(f.is_dead(0, 0));
     }
 
@@ -299,7 +352,7 @@ OO........O...O.OO....O.O...........
 ...........O...O....................
 ............OO......................";
         f.init_from_plaintext(fdata, Some('x'));
-        f.set_dead(0,0);
+        f.set_cell_dead(0, 0);
         assert!(f.is_dead(0, 0));
     }
 
@@ -312,7 +365,7 @@ OO........O...O.OO....O.O...........
 
     #[test]
     fn should_use_tuple_keyed_map() {
-        let mut hashmapMain: HashMap<(u32, u32), bool> = HashMap::new();
+        let mut hashmapMain: HashMap<(usize, usize), bool> = HashMap::new();
         hashmapMain.insert((1, 2), false);
         hashmapMain.insert((2, 1), true);
         hashmapMain.insert((3, 1), true);
