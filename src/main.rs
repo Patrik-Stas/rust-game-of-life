@@ -52,7 +52,7 @@ fn main() {
     let mut bigbox = GolStateHash::new();
     bigbox.insert(20,15, glider.iter_alive());
 
-    let visualizer = VisualizerPancures::new();
+    let visualizer = VisualizerPancures::new(10, 10);
     run_in(bigbox, visualizer);
 
 }
