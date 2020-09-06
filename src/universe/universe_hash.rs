@@ -56,6 +56,10 @@ impl CellUniverse for GolStateHash {
         !self.is_cell_alive(col, row)
     }
 
+    fn wipe(&mut self) {
+        self.hashmap_main = Default::default();
+    }
+
     // todo: how to enable this? I want to return custom iterator so I could chain some custom ops on it
     // fn iter_alive<'a>(&'a self) -> PointIterator<Item=dyn Iterator> {
     fn iter_alive<'a>(&'a self) -> Box<dyn Iterator<Item=Point> + 'a> {
@@ -71,25 +75,11 @@ impl CellUniverse for GolStateHash {
 
     // If I could return custom Iterator from iter_alive, I could extract this out to util function reading point iterator, returning another point iterator
     fn iter_neighbours<'a>(&'a self) -> Box<dyn Iterator<Item=Point> + 'a> {
-        Box::new(self.iter_alive())
+        Box::new(PointNeighbourIterator::new(self.iter_alive()))
     }
 
-    // todo: ...
-    // fn iter_candidates<'a>(&'a self) -> Box<dyn Iterator<Item=Point> + 'a> {
-    //     let wrapper = IteratorWrapper::new(
-    //         self.hashmap_main
-    //             .iter()
-    //             .map(|((x, y), b)| {
-    //                 Point { x: *x, y: *y }
-    //             })
-    //     );
-    //     return Box::new(wrapper);
-    // }
-
     fn insert<'a>(&'a mut self, x_origin: usize, y_origin: usize, cells: Box<dyn Iterator<Item=Point> + 'a>) {
-        println!("inserting pattern to gol_hash");
         for cell_point in cells {
-            println!("inserting ..");
             self.set_cell_alive(x_origin + cell_point.x, y_origin + cell_point.y)
         }
     }
@@ -124,6 +114,54 @@ mod tests {
 //         assert_eq!(false, f.has_alive_in_row(2));
 //         assert_eq!(false, f.has_alive_in_row(3));
 //     }
+
+    #[test]
+    fn should_iterate_alive_cells() {
+        let mut f = GolStateHash::new();
+        let fdata = "\
+x - x
+- - -
+- x -
+- - x";
+        init_from_plaintext(&mut f, fdata, Some('x'));
+
+        let mut points: HashMap<(usize, usize), bool> = Default::default();
+        for pt in f.iter_alive() {
+            let pt_tuple = (pt.x, pt.y);
+            assert!(points.get(&pt_tuple) == None);
+            points.insert(pt_tuple, true);
+        }
+        assert!(points.get(&(0,0)) != None);
+        assert!(points.get(&(2,0)) != None);
+        assert!(points.get(&(1,2)) != None);
+        assert!(points.get(&(2,3)) != None);
+    }
+
+    #[test]
+    fn should_iterate_alive_neihgbours() {
+        let mut f = GolStateHash::new();
+        let fdata = "\
+- - -
+- x -
+- - -";
+        init_from_plaintext(&mut f, fdata, Some('x'));
+        let mut points: HashMap<(usize, usize), bool> = Default::default();
+        for pt in f.iter_neighbours() {
+            let pt_tuple = (pt.x, pt.y);
+            assert!(points.get(&pt_tuple) == None);
+            points.insert(pt_tuple, true);
+        }
+        assert_eq!(points.len(), 8);
+        assert!(points.get(&(0,0)) != None);
+        assert!(points.get(&(1,0)) != None);
+        assert!(points.get(&(2,0)) != None);
+        assert!(points.get(&(0,1)) != None);
+        assert!(points.get(&(2,1)) != None);
+        assert!(points.get(&(0,2)) != None);
+        assert!(points.get(&(1,2)) != None);
+        assert!(points.get(&(2,2)) != None);
+    }
+
 
     #[test]
     fn should_correct_construct_bitmap_from_string_2() {

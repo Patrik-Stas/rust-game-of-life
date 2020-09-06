@@ -75,6 +75,9 @@ impl CellUniverse for Board2D {
         !self.is_cell_alive(col, row)
     }
 
+    fn wipe(&mut self) {
+        self.data = Board2D::_create_empty_data(self.cols_x, self.rows_y);
+    }
 
     fn iter_alive<'a>(&'a self) -> Box<dyn Iterator<Item=Point> + 'a> {
         let iterator = IteratorBoard2D {
@@ -98,11 +101,15 @@ impl CellUniverse for Board2D {
 
 
 impl Board2D {
-    pub fn new(cols: usize, rows: usize) -> Board2D {
+    fn _create_empty_data(cols: usize, rows: usize) -> Vec<Vec<bool>> {
+        vec!(vec!(false; rows); cols)
+    }
+
+    pub fn new(cols_x: usize, rows_y: usize) -> Board2D {
         Board2D {
-            cols_x: cols,
-            rows_y: rows,
-            data: vec!(vec!(false; rows); cols),
+            cols_x,
+            rows_y,
+            data: Board2D::_create_empty_data(cols_x, rows_y),
         }
     }
 
@@ -213,6 +220,31 @@ x - x x -
         assert!(!f.is_cell_alive(2, 3));
         assert!(!f.is_cell_alive(3, 3));
         assert!(f.is_cell_alive(4, 3));
+    }
+
+    #[test]
+    fn should_iterate_alive_neihgbours() {
+        let mut f = Board2D::new(3, 3);
+        let fdata = "\
+- - -
+- x -
+- - -";
+        init_from_plaintext(&mut f, fdata, Some('x'));
+        let mut points: HashMap<(usize, usize), bool> = Default::default();
+        for pt in f.iter_neighbours() {
+            let pt_tuple = (pt.x, pt.y);
+            assert!(points.get(&pt_tuple) == None);
+            points.insert(pt_tuple, true);
+        }
+        assert_eq!(points.len(), 8);
+        assert!(points.get(&(0,0)) != None);
+        assert!(points.get(&(1,0)) != None);
+        assert!(points.get(&(2,0)) != None);
+        assert!(points.get(&(0,1)) != None);
+        assert!(points.get(&(2,1)) != None);
+        assert!(points.get(&(0,2)) != None);
+        assert!(points.get(&(1,2)) != None);
+        assert!(points.get(&(2,2)) != None);
     }
 
 

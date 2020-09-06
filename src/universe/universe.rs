@@ -7,6 +7,7 @@ pub trait CellUniverse {
     fn set_cell_state(&mut self, x: usize, y: usize, alive: bool);
     fn is_cell_alive(&self, x: usize, y: usize) -> bool;
     fn is_cell_dead(&self, x: usize, y: usize) -> bool;
+    fn wipe(&mut self);
 
     /**
     Returns iterator over Points representing alive cells
