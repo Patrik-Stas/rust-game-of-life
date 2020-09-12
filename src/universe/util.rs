@@ -2,7 +2,6 @@ use crate::universe::universe::CellUniverse;
 use rand::Rng;
 use std::fs;
 
-
 pub fn init_random(x_from: usize, x_to: usize, y_from: usize, y_to: usize, universe: &mut impl CellUniverse) {
     let mut rng = rand::thread_rng();
     for col_index in x_from..x_to {

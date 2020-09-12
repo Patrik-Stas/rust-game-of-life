@@ -314,4 +314,3 @@ OO........O...O.OO....O.O...........
         init_from_plaintext_file(&mut f, "./patterns/plaintext/glider.txt");
     }
 }
-

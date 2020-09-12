@@ -14,18 +14,6 @@ impl GolStateHash {
             hashmap_main: Default::default()
         };
     }
-
-    // how to restrict return type containing generics, for that generics to be a trait?
-    // fn iter_alive_2<I>(& self) -> PointIterator<I> where I:Iterator<Item=Point> {
-    //     let wrapper = PointIterator::new(
-    //         self.hashmap_main
-    //             .iter()
-    //             .map(|((x, y), b)| {
-    //                 Point { x: *x, y: *y }
-    //             })
-    //     );
-    //     return wrapper;
-    // }
 }
 
 impl CellUniverse for GolStateHash {
@@ -73,7 +61,6 @@ impl CellUniverse for GolStateHash {
         return Box::new(wrapper);
     }
 
-    // If I could return custom Iterator from iter_alive, I could extract this out to util function reading point iterator, returning another point iterator
     fn iter_neighbours<'a>(&'a self) -> Box<dyn Iterator<Item=Point> + 'a> {
         Box::new(PointNeighbourIterator::new(self.iter_alive()))
     }
@@ -93,27 +80,6 @@ mod tests {
 
     use super::*;
     use crate::universe::util::{init_from_plaintext, init_from_plaintext_file};
-
-//     #[test]
-//     fn should_correct_construct_bitmap_from_string_1() {
-//         let mut f = GolStateHash::new();
-//         let fdata = "\
-// - - - - -
-// - - x x -
-// - - - - -
-// - - - - -";
-//         init_from_plaintext(&f, fdata, Some('x'));
-//         assert!(f.is_cell_alive(2, 1));
-//         assert!(f.is_cell_alive(3, 1));
-//
-//         assert_eq!(false, f.has_alive_in_col(0));
-//         assert_eq!(false, f.has_alive_in_col(1));
-//         assert_eq!(false, f.has_alive_in_col(4));
-//
-//         assert_eq!(false, f.has_alive_in_row(0));
-//         assert_eq!(false, f.has_alive_in_row(2));
-//         assert_eq!(false, f.has_alive_in_row(3));
-//     }
 
     #[test]
     fn should_iterate_alive_cells() {
