@@ -7,7 +7,7 @@ pub fn init_random(x_from: usize, x_to: usize, y_from: usize, y_to: usize, unive
     for col_index in x_from..x_to {
         for row_index in y_from..y_to {
             let n1: u8 = rng.gen();
-            if n1 % 2 == 0 {
+            if n1 % 10 == 0 {
                 universe.set_cell_alive(col_index, row_index)
             }
         }

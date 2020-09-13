@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 rand = "0.7.3"
 pancurses = "0.16.1"
+actix-web = "3"
