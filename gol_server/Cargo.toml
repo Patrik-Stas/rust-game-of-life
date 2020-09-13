@@ -1,0 +1,11 @@
+[package]
+name = "gol_server"
+version = "0.1.0"
+authors = ["Patrik <patrik.stas@absa.africa>"]
+edition = "2018"
+
+[dependencies]
+actix-web = "3"
+gol_core = { path = "../gol_core" }
+#gol_core = { path = "../gol_core", default-features = false, features = ["log"] }
+

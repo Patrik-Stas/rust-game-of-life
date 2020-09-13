@@ -1,6 +1,7 @@
-use crate::common::Point;
-use crate::universe::universe::CellUniverse;
-use crate::universe::universe_board_2d::Board2D;
+use gol_core::common::Point;
+use gol_core::universe::universe_board_2d::Board2D;
+
+use crate::gol_core::universe::universe::CellUniverse;
 
 pub struct ConsoleVisualizer {
     board: Board2D,
@@ -8,7 +9,7 @@ pub struct ConsoleVisualizer {
 
 impl ConsoleVisualizer {
     pub fn new(cols_x: usize, rows_y: usize) -> ConsoleVisualizer {
-        ConsoleVisualizer { board: Board2D::new(cols_x, rows_y)  }
+        ConsoleVisualizer { board: Board2D::new(cols_x, rows_y) }
     }
 
     pub fn visualize(&mut self, cell_iterator: impl Iterator<Item=Point>) {

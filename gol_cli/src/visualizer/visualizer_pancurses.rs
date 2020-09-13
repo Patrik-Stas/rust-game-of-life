@@ -1,14 +1,13 @@
-use pancurses::{curs_set, endwin, initscr, Window, Input};
+use pancurses::{curs_set, endwin, initscr, Input, Window};
 
-use crate::common::Point;
-use crate::universe::universe::CellUniverse;
-use crate::universe::universe_board_2d::Board2D;
+use gol_core::common::Point;
+
 use crate::visualizer::visualizer::UniverseVisualizer;
 
 pub struct VisualizerPancures {
     window: Window,
     baseview_x: i32,
-    baseview_y: i32
+    baseview_y: i32,
 }
 
 impl VisualizerPancures {
@@ -28,7 +27,7 @@ impl VisualizerPancures {
 
 impl UniverseVisualizer for VisualizerPancures {
     fn visualize(&mut self, cell_iterator: impl Iterator<Item=Point>) {
-        self.window.mv(4,0);
+        self.window.mv(4, 0);
         let color: i16 = 0x1234;
         self.window.color_set(color);
         self.window.clrtobot();
