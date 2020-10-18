@@ -1,0 +1,22 @@
+config:
+  target: "http://localhost:7700"
+  phases:
+    - duration: 5
+      arrivalRate: 5
+      name: Warm up
+scenarios:
+  # We define one scenario:
+  - name: "Make good"
+    flow:
+      - post:
+          url: "/api/good"
+          json:
+            hello: "world"
+
+  # We define one scenario:
+  - name: "Make bad"
+    flow:
+      - post:
+          url: "/api/bad"
+          json:
+            hello: "world"
